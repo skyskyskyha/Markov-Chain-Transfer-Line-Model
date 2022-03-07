@@ -1,0 +1,84 @@
+Usage
+=====
+
+Creating a Graph
+----------------
+
+To create a graph using Stateflow, start from the Matlab workspace,
+and create a new ``.slx`` file. Open the 
+model in Simulink and navigate to ``Library Browser => Stateflow``.
+Add two charts to the workspace. These represent the upstream and 
+downstream machines, and you can name them whatever you like.
+
+Now you may create the graphs in each chart. States are represented by ``State`` 
+objects, while transitions are represented by ``Default Transition`` objects.
+Each are accessible via the sidebar to the left. Be sure to remove the start point
+(the little purple dot attached to the first ``State``) before continuing.
+
+Describing Probabilities and Buffer Changes
+-------------------------------------------
+
+Once you are satisfied with each connection, you can now encode the 
+probabilities and buffer-content changes into the transitions. To do this,
+select a transition and click on the text box that appears above. Probabilities
+are entered between the square brackets, and buffer-content changes are
+entered into the curly brackets.
+
+For example, if you want a transition to have a probability of 0.5 with an associated
+buffer-content change of -1, you would enter ``[0.5]{-1}`` into the text box.
+
+Anything outside of curly braces is not read by the program and can be used for commenting
+or annotation.
+
+.. note::
+    While the buffer-content change parameter only accepts an input from the set {-1, 0, 1},
+    the probability parameter can accept either a real number in the interval (0,1], or a valid matlab
+    symbolic expression.
+
+    Symbolic expressions can be single variable names (e.g. ``p1``) or mathematical expressions (e.g. ``p1*(1-r1)``).
+    Implicit multiplication isn't supported, so ``p1(1-r1)`` would produce undefined behavior.
+
+    After the transition matrix is generated, each symbolic variable can be substituted with a real number using the 
+    :ref:`substituteValues() <substituteValues>` method. It is recommended to group similar variables by the first letter 
+    of their name, as this decides the manner of the input to :meth:`substituteValues()`. For more information, see its documentation.
+
+Using the Program
+-----------------
+
+After creating the Markov chains, you can now use :ref:`TransitionMatrixGenerator <TransitionMatrixGenerator>`. 
+Here is a typical interaction with the program:
+
+.. code-block:: Matlab
+
+    obj = TransitionMatrixGenerator('modelName/upstreamMachine', 'modelName/downstreamMachine', bufferCapacity);
+    obj = obj.generateTransitionMatrix();
+    mat = obj.substituteValues(p, q, r, s, t);
+
+The first line initializes the object by pointing it to the chart objects that were created earlier. The second line creates
+the symbolic transition matrix, which is the most expensive step owing to the precision of Matlab's symbolic expression toolbox.
+The last line substitutes real valued vectors in for the variables and stores the result in ``mat``. Here, ``p``, ``q``, ``r``, 
+``s``, and ``t`` are vectors containing real values. 
+
+For example, suppose there are three variables that begin with ``p``: ``p1``, ``p2``, and ``p3``.
+Then 
+
+``p = [0.3 0.6 0.1]``
+
+would correspond to
+
+``p1 = 0.3``
+``p2 = 0.6``
+``p3 = 0.1``.
+
+Bugs and Workarounds
+--------------------
+
+In the constructor of TransitionMatrixGenerator, there is a call to pruneSVM. This function does its best to remove 
+logically impossible and transient states in the :ref:`State Vector Matrix <svm>`. Unfortunately, it's not perfect. If you detect an error in 
+``obj.svm``, feel free to overwrite it before calling :meth:`generateTransitionMatrix` with 
+
+.. code-block:: Matlab
+    
+    obj.svm = myStateVecMat;
+
+

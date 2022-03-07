@@ -1,0 +1,150 @@
+.. _TransitionMatrixGenerator:
+
+TransitionMatrixGenerator
+=========================
+
+Attributes
+----------
+
+:attr:`m1`
+
+:attr:`m2`
+
+Transition matrices which represent adjacencies in upstream and downstream machines
+respectively.
+
+:attr:`b1`
+
+:attr:`b2`
+
+Weighted directed adjacency matrices which represent changes in buffer contents in upstream
+and downstream machines respectively.
+
+:attr:`bufCap`
+
+The maximum capacity of the buffer.
+
+.. _svm:
+
+:attr:`svm`
+
+The state vector matrix. Each row in this variable represents the number of a row or column in :attr:`T`. 
+
+.. _T:
+
+:attr:`T`
+
+The symbolic transition matrix. An adjacency from state x to state y in the state vector matrix corresponds to moving from 
+column x to row y in the transition matrix. Every entry in this matrix will be a matlab symbolic expression. For substituting
+values, use :attr:`Tf`. 
+
+:attr:`Tf`
+
+A matlabFunction that takes arguments in lexicographical order from ``groups.values()``. It shouldn't be necessary to substitute directly into this
+function. Use ``substituteValues()`` instead.
+
+.. _groups:
+
+:attr:`groups`
+
+Map that groups variables according to the first letter in their names. Characters are mapped to vectors of variables sorted in lexicographical order.
+
+Methods
+-------
+.. method:: TransitionMatrixGenerator(m1StateFlow, m2StateFlow, bufCap)
+
+    returns: ``TransitionMatrixGenerator`` object
+
+    Constructor function. Initializes object by receiving a path to Stateflow charts ``m1StateFlow`` and ``m2StateFlow``.
+    ``bufCap`` represents buffer capacity and takes an integer.
+
+.. method:: sortstates(states)
+
+    requires: ``states`` is N x 3 unsorted list of states representing states in :ref:`obj.svm <svm>`.
+
+    returns: N x 3 matrix representing states in :ref:`obj.svm <svm>`.
+
+    returned matrix sorted row-wise from comparing from left to right.
+
+.. method:: getProbabilityMatrix(stateFlowChart)
+
+    requires: ``stateFlowChart`` is Stateflow ``Chart`` object.
+
+    returns: 2D transition matrix specified by stateFlowChart
+
+    rows and columns correspond to the lexicographically ordered names of each ``State``.
+
+.. method:: getBufferMatrix(stateFlowChart)
+
+    returns: 2D directed adjacency matrix specified by stateFlowChart where each connection
+    corresponds to the value in curly braces on the ``Default Transition`` object. 
+
+    rows and columns correspond to the lexicographically ordered names of each ``State``.
+
+.. method:: generateTransitionMatrix(obj)
+
+    returns: ``TransitionMatrixGenerator`` object with modified :ref:`T <T>` property.
+
+    This function double loops through every state in :attr:`svm` and calculates the probability of their transition. 
+
+    In the ordinary case (buffer content is not zero and not ``bufCap``), the result is simply the product of the respective 
+    transitions in ``m1`` and ``m2``. If the buffer content is zero, it is assumed that the upstream machine is in a productive 
+    state and that that state cannot be left until the downstream machine takes a part. If the buffer content is ``bufCap``, the 
+    symmetrical case happens.
+
+.. method:: genStateVecMatrix(obj)
+
+    returns: ``TransitionMatrixGenerator`` object with modified :ref:`svm <svm>` property.
+
+    ``svm`` will be unpruned.
+
+.. method:: pruneSVM(obj)
+
+    requires: ``genStateVecMatrix()`` called first.
+
+    returns: ``TransitionMatrixGenerator`` object with modified :ref:`svm <svm>` property
+
+.. _substituteValues:
+
+.. method:: substituteValues(obj, varargin)
+
+    requires: ``generateTransitionMatrix()`` called first. 
+              ``varargin`` consists of row vectors of real numbers.
+
+    returns: 2D transition matrix of doubles.
+
+    .. note::
+
+        In effect, this method will concatenate all of the vectors provided in ``varargin`` and substitute 
+        the result into ``obj.Tf``. The parameters of ``obj.Tf`` are in lexicographical order, so make sure 
+        that variable names are written to match your intentions.
+
+.. method:: genGroups(obj)
+
+    returns: ``TransitionMatrixGenerator`` object with modified :ref:`groups <groups>` property.
+
+    .. note::
+        ``groups`` is a map which takes ``char``-type keys and maps them to vectors of symbols.
+        The variables are read directly from ``obj.m1`` and ``obj.m2``.
+        The vectors are sorted after each variable is read.
+
+.. method:: pruneFrom(obj, bufChange, statesToPrune, internalStates)
+
+    requires: ``bufChange`` is an integer in the set {-1, 0, 1}. ``statesToPrune`` and ``internalStates`` are
+    N x 3 matrices representing states in :ref:`svm <svm>`.
+
+    returns: N x 3 matrix representing states int ``statesToPrune`` that can be reached from ``internalStates``
+    with a buffer-content change of ``bufChange``.
+
+.. method:: expand(obj, bufChange, toExpand, expansionDomain)
+    
+    requires: ``bufChange`` is an integer in the set {-1, 0, 1}. ``toExpand`` and ``expansionDomain`` are
+    N x 3 matrices representing states in :ref:`svm <svm>`.
+
+    returns: N x 3 matrix  representing states in ``expansionDomain`` that can eventually be reached from the starting 
+    points in ``toExpand``.
+
+.. method:: isAdjacent(obj, bufChange, state1, state2)
+
+    requires: ``bufChange`` is an integer in the set {-1, 0, 1}. ``state1`` and ``state2`` are 1 x 3 matrices representing 
+    states in :ref:`svm <svm>`.
