@@ -940,6 +940,7 @@ classdef TransitionMatrixGenerator
             obj.Ts = sym(obj.Ts);
             disp ("Generating symbolic matrix" )
             startindex = zeros(MAX,1);
+            startindex(1)=1;
             for i=2:dim
                 if (obj.svm(i,1)~=obj.svm(i-1,1))
                     startindex(obj.svm(i,1))=i;
@@ -967,6 +968,7 @@ classdef TransitionMatrixGenerator
                     count=count+1;
                     target = j;
                     bufStart = obj.svm(i, 1);
+                    
                     bufStop  = obj.svm(j, 1);
                     if (bufStart-bufStop>1 || bufStop-bufStart>1)
                         continue;
