@@ -42,11 +42,14 @@ source_code: contains all matlab file
 
 
 stateflow contains all slx file
-	4-Behavior_State_Machine, 5-Behavior_State_Machine, 6-Behavior_State_Machine are correct.
-	merginglines still have some problems not fixed
+	example.slx: 4-state machine
+	figure11.slx: 5-state machine
+	figure11with6states.slx: 6-state machine
+	merginglines.slx: Upstream has two machines
+
+	(I don't know why I can't open these files if I rename them)
 
 
 
-All of other redundunt, useless or testing code are deleted.
 
 
